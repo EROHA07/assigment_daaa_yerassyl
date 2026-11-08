@@ -53,30 +53,46 @@ Insert all patterns into one trie. Breadth-first construction creates failure li
 
 The implementation was also checked in a reference environment with deterministic randomized search comparisons and stress cases: a 100,000-vertex tree path, suffix input of length 50,000, and Aho–Corasick with a 200,000-character text. The official `python tools/run.py --check` must still be run from this repository before submission.
 
+## Representative correctness cases
+
+The following are direct JSON Lines requests and their observed results from the local Java smoke run. Each result was parsed as JSON. These are representative examples; the official launcher remains the authoritative 44-case check.
+
+| Command / input | Expected and observed result | Defect this case detects |
+|---|---|---|
+| `{"task":"lcs","a":"axbyc","b":"abc"}` | `{"length":3,"sequence":"abc"}` | Treating LCS as a contiguous substring |
+| `{"task":"merge","sizes":[2,3,4]}` | `{"cost":14,"plan":[[0,0,1],[0,1,2]]}` | Non-adjacent/greedy merges or non-chronological plan |
+| `{"task":"tree","n":3,"weights":[4,9,6],"edges":[[0,1],[1,2]]}` | `{"weight":10,"selected":[0,2]}` | Selecting adjacent vertices or reconstructing the wrong optimum |
+| `{"task":"naive","text":"aaaaa","pattern":"aaa"}` | `{"positions":[0,1,2]}` | Missing overlapping matches |
+| `{"task":"kmp","text":"abababa","pattern":"aba"}` | `{"positions":[0,2,4]}` | Failing to fall back after a full KMP match |
+| `{"task":"rk","text":"abdj","pattern":"ab"}` | `{"positions":[0]}` | Reporting a hash collision as a real match |
+| `{"task":"suffix","text":"banana"}` | `{"sa":[5,3,1,0,4,2],"lcp":[0,1,3,0,0,2],"repeated":"ana"}` | Incorrect suffix order, LCP indexing or repeat selection |
+| `{"task":"aho","patterns":["he","she","he"],"texts":["sheshe",""]}` | `{"counts":[[2,2,2],[0,0,0]]}` | Missing suffix-pattern counts, duplicate patterns or state reset between texts |
+| `{"task":"kmp","text":"ab","pattern":""}` | `{"positions":[0,1,2]}` | Empty-pattern boundary handling |
+
 ## Naive / KMP / RK comparison
 
 The benchmark script uses seed 20261108, n = 300, 1000 and 3000, and m = n/10. It tests a random four-character alphabet (pattern selected from the text) and a repetitive all-`a` case. It verifies identical positions before timing, performs one warm-up, then records three runs per algorithm. Compilation is excluded; timing includes writing/flushing one JSON request and reading/parsing its JSON response. The table below is from the reference Linux/OpenJDK container and may differ on another computer.
 
-| Case | n | m | Algorithm | Median (ms) |
-|---|---:|---:|---|---:|
-| Random | 300 | 30 | Naive | 0.251 |
-| Random | 300 | 30 | KMP | 0.175 |
-| Random | 300 | 30 | RK | 0.257 |
-| Random | 1000 | 100 | Naive | 0.302 |
-| Random | 1000 | 100 | KMP | 0.400 |
-| Random | 1000 | 100 | RK | 0.418 |
-| Random | 3000 | 300 | Naive | 0.655 |
-| Random | 3000 | 300 | KMP | 0.649 |
-| Random | 3000 | 300 | RK | 0.757 |
-| Repetitive | 300 | 30 | Naive | 0.838 |
-| Repetitive | 300 | 30 | KMP | 0.367 |
-| Repetitive | 300 | 30 | RK | 0.854 |
-| Repetitive | 1000 | 100 | Naive | 1.386 |
-| Repetitive | 1000 | 100 | KMP | 0.573 |
-| Repetitive | 1000 | 100 | RK | 1.575 |
-| Repetitive | 3000 | 300 | Naive | 1.665 |
-| Repetitive | 3000 | 300 | KMP | 2.100 |
-| Repetitive | 3000 | 300 | RK | 1.637 |
+| Case | n | m | Algorithm | Run 1 (ms) | Run 2 (ms) | Run 3 (ms) | Median (ms) |
+|---|---:|---:|---|---:|---:|---:|---:|
+| Random | 300 | 30 | Naive | 0.259 | 0.327 | 0.222 | 0.259 |
+| Random | 300 | 30 | KMP | 0.314 | 0.291 | 0.246 | 0.291 |
+| Random | 300 | 30 | RK | 0.298 | 0.263 | 0.821 | 0.298 |
+| Random | 1000 | 100 | Naive | 0.939 | 0.641 | 0.559 | 0.641 |
+| Random | 1000 | 100 | KMP | 0.508 | 0.421 | 0.518 | 0.508 |
+| Random | 1000 | 100 | RK | 0.561 | 1.401 | 0.565 | 0.565 |
+| Random | 3000 | 300 | Naive | 0.894 | 1.168 | 0.690 | 0.894 |
+| Random | 3000 | 300 | KMP | 0.976 | 0.827 | 1.141 | 0.976 |
+| Random | 3000 | 300 | RK | 1.480 | 0.877 | 0.962 | 0.962 |
+| Repetitive | 300 | 30 | Naive | 1.028 | 1.084 | 0.879 | 1.028 |
+| Repetitive | 300 | 30 | KMP | 0.564 | 0.475 | 0.443 | 0.475 |
+| Repetitive | 300 | 30 | RK | 0.883 | 0.723 | 0.730 | 0.730 |
+| Repetitive | 1000 | 100 | Naive | 3.801 | 4.822 | 3.441 | 3.801 |
+| Repetitive | 1000 | 100 | KMP | 1.685 | 1.471 | 1.216 | 1.471 |
+| Repetitive | 1000 | 100 | RK | 4.690 | 4.055 | 3.683 | 4.055 |
+| Repetitive | 3000 | 300 | Naive | 4.705 | 9.096 | 6.237 | 6.237 |
+| Repetitive | 3000 | 300 | KMP | 3.649 | 5.892 | 2.673 | 3.649 |
+| Repetitive | 3000 | 300 | RK | 5.330 | 10.808 | 7.310 | 7.310 |
 
 At these small sizes, JVM warm-up and JSON transport affect timings, so measurements do not prove asymptotic complexity. Repetitive inputs make naive and RK verify many long candidate matches, while KMP reuses prefix information. Random inputs often mismatch early, making naive competitive. The deliberately small RK modulus is for collision testing and should not be generalized to production hashing.
 
