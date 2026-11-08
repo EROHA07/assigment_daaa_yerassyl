@@ -80,6 +80,3 @@ The benchmark script uses seed 20261108, n = 300, 1000 and 3000, and m = n/10. I
 
 At these small sizes, JVM warm-up and JSON transport affect timings, so measurements do not prove asymptotic complexity. Repetitive inputs make naive and RK verify many long candidate matches, while KMP reuses prefix information. Random inputs often mismatch early, making naive competitive. The deliberately small RK modulus is for collision testing and should not be generalized to production hashing.
 
-## Sources and AI assistance
-
-The assignment specification, request contracts, rubric and public tests are from the course-provided `RZhaniya/daa-assignment-4-archive` template. ChatGPT assisted with drafting and reviewing the Java implementation, explanations and additional test scaffolding. The student must review the implementation, understand each algorithm, run the official checks and be prepared to explain the work independently during the individual defence.
